@@ -6,12 +6,7 @@ using PharmaChainLite.Domain.Repositories;
 
 namespace PharmaChainLite.Application.Shipments
 {
-    /// <summary>
-    /// Decorator around ShipmentService that emits domain events:
-    ///  - ShipmentStatusChanged when a shipment transitions.
-    ///  - PackStatusChanged for any packs whose status changes as a result.
-    /// Also normalizes pack tokens before delegating.
-    /// </summary>
+
     public sealed class EventingShipmentService
     {
         private readonly ShipmentService _inner;
@@ -44,15 +39,12 @@ namespace PharmaChainLite.Application.Shipments
         public IEnumerable<Shipment> List(int skip = 0, int take = 100)
             => _inner.List(skip, take);
 
-        /// <summary>
-        /// Transitions shipment and publishes ShipmentStatusChanged + PackStatusChanged events.
-        /// </summary>
+
         public Shipment Transition(string shipmentId, ShipmentStatus nextStatus)
         {
             if (string.IsNullOrWhiteSpace(shipmentId))
                 throw new ArgumentException("Shipment id is required.", nameof(shipmentId));
 
-            // Snapshot pack statuses BEFORE transition
             var beforeStatuses = new Dictionary<string, PackStatus>(StringComparer.OrdinalIgnoreCase);
             var shipmentBefore = Find(shipmentId);
             foreach (var t in shipmentBefore.PackTokens)

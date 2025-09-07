@@ -9,11 +9,6 @@ using PharmaChainLite.Infrastructure.Data;
 
 namespace PharmaChainLite.Infrastructure.Repositories
 {
-    /// <summary>
-    /// SQLite-backed Shipment repository that persists shipments and their pack tokens.
-    /// During load, it bypasses invariants (no AddPackToken/TransitionTo).
-    /// It also manages CreatedAt/UpdatedAt columns.
-    /// </summary>
     public sealed class SqliteShipmentRepository : IShipmentRepository
     {
         private readonly SqliteDb _db;
@@ -140,9 +135,6 @@ LIMIT $take OFFSET $skip";
             }
         }
 
-        // ---------------------------------------------------------------------
-        // Schema helpers
-        // ---------------------------------------------------------------------
 
         private void EnsureTables(SqliteConnection con)
         {
@@ -172,9 +164,7 @@ CREATE TABLE IF NOT EXISTS ShipmentPacks(
             EnsureColumn(con, "Shipments", "UpdatedAt");
         }
 
-        /// <summary>
-        /// Safe ALTER path for SQLite: add column with no default, then backfill.
-        /// </summary>
+
         private void EnsureColumn(SqliteConnection con, string table, string column)
         {
             if (ColumnExists(con, table, column)) return;
@@ -211,10 +201,6 @@ WHERE {column} IS NULL OR TRIM({column}) = '';";
             }
             return false;
         }
-
-        // ---------------------------------------------------------------------
-        // Loading helpers (bypass invariants on rehydrate)
-        // ---------------------------------------------------------------------
 
         private static IEnumerable<string> NormalizeTokens(IEnumerable<string> tokens)
             => (tokens ?? Enumerable.Empty<string>())

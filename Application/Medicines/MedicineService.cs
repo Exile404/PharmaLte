@@ -7,16 +7,13 @@ using PharmaChainLite.Domain.Repositories;
 
 namespace PharmaChainLite.Application.Medicines
 {
-    /// <summary>
-    /// Admin CRUD for medicines.
-    /// Also ensures a shipment shell exists per batch (no packs yet).
-    /// </summary>
+  
     public sealed class MedicineService
     {
         private readonly IMedicineRepository _meds;
         private readonly IShipmentRepository _shipments;
 
-        // Change if you want a different admin PIN.
+    
         private const string AdminPin = "1234";
 
         public MedicineService(IMedicineRepository meds, IShipmentRepository shipments)
@@ -38,12 +35,7 @@ namespace PharmaChainLite.Application.Medicines
             return _meds.FindByBatch(batchNo.Trim());
         }
 
-        // ------------- Commands -------------
-        /// <summary>
-        /// Add or update a medicine. Also ensures a Shipment shell exists for this batch.
-        /// You can optionally supply from/to parties and a price (decimal).
-        /// Does NOT touch PackTokens here.
-        /// </summary>
+   
         public void AddOrUpdate(
             string name,
             string batchNo,

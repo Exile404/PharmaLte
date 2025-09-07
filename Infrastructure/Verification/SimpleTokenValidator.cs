@@ -3,12 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace PharmaChainLite.Application.Verification
 {
-    /// <summary>
-    /// Basic format checks:
-    /// - required, trimmed
-    /// - 4..64 chars
-    /// - only A–Z, 0–9, and '-' (dash)
-    /// </summary>
+
     public sealed class SimpleTokenValidator : ITokenValidator
     {
         private static readonly Regex Allowed =

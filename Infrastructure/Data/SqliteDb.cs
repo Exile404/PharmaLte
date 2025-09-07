@@ -3,9 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace PharmaChainLite.Infrastructure.Data
 {
-    /// <summary>
-    /// Simple SQLite helper: holds the connection string and ensures schema exists.
-    /// </summary>
+
     public sealed class SqliteDb
     {
         public string ConnectionString { get; }

@@ -3,11 +3,7 @@ using System.Collections.Generic;
 
 namespace PharmaChainLite.Application.Events
 {
-    /// <summary>
-    /// Simple in-process event bus (publish-subscribe).
-    /// Subscribe returns an IDisposable you can call Dispose() on to unsubscribe.
-    /// Thread-safe for basic use (single-process, UI app).
-    /// </summary>
+
     public interface IEventBus
     {
         IDisposable Subscribe<TEvent>(Action<TEvent> handler);
@@ -67,13 +63,12 @@ namespace PharmaChainLite.Application.Events
             {
                 try
                 {
-                    // Safe cast given we only store Action<TEvent> for the key
+                    
                     ((Action<TEvent>)d).Invoke(evt);
                 }
                 catch
                 {
-                    // Swallow per-subscriber errors to avoid blocking other handlers.
-                    // In a real app, log this.
+                 
                 }
             }
         }

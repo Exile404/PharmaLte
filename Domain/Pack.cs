@@ -24,7 +24,7 @@ namespace PharmaChainLite.Domain
             return Expiry.Date < date;
         }
 
-        // State-guarded transitions will be added later; for now keep it simple.
+ 
         public void SetStatus(PackStatus newStatus) => Status = newStatus;
     }
 }

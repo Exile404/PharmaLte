@@ -3,16 +3,11 @@ using PharmaChainLite.Application.Events;
 using PharmaChainLite.Application.Payments;
 using PharmaChainLite.Domain;
 using PharmaChainLite.Domain.Repositories;
-using PharmaChainLite.Infrastructure.Repositories; // for SqlitePackRepository
+using PharmaChainLite.Infrastructure.Repositories;
 
 namespace PharmaChainLite.Application.Sales
 {
-    /// <summary>
-    /// Coordinates the retail sale of a Pack:
-    ///  1) Guard and set Pack status to Sold.
-    ///  2) Publish domain events (PackStatusChanged, PackSold).
-    ///  3) Delegate to PaymentService to record the retail ledger entry.
-    /// </summary>
+
     public sealed class SalesService
     {
         private readonly IPackRepository _packs;
@@ -26,9 +21,6 @@ namespace PharmaChainLite.Application.Sales
             _payments = payments ?? throw new ArgumentNullException(nameof(payments));
         }
 
-        /// <summary>
-        /// UI-friendly entry point. Normalizes inputs and performs the sale.
-        /// </summary>
         public void RecordSale(string packToken, string retailer, string customer, decimal? salePrice = null)
         {
             var token = Normalize(packToken);
@@ -66,9 +58,7 @@ namespace PharmaChainLite.Application.Sales
             _payments.RecordRetailSale(retailer.Trim(), customer.Trim(), token, salePrice);
         }
 
-        /// <summary>
-        /// Backward-compat shim for existing callers. Forwards to RecordSale.
-        /// </summary>
+
         public void SellPack(string packToken, string retailer, string customer, decimal? salePrice = null)
             => RecordSale(packToken, retailer, customer, salePrice);
 

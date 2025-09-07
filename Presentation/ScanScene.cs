@@ -97,18 +97,15 @@ namespace PharmaChainLite.Presentation
             {
                 w.DrawText($"Status: {_last.Status}", Color.Black, _font, 18, 20, 260);
                 w.DrawText($"Duplicate: {_last.Duplicate}", Color.Black, _font, 18, 20, 290);
-                w.DrawText($"Expired: {_last.Expired}", Color.Black, _font, 18, 20, 320);
+                w.DrawText($"Expired: {!_last.Expired}", Color.Black, _font, 18, 20, 320);
             }
-            // NOTE: no window.Refresh() here; Program.cs refreshes once per frame.
+           
         }
 
-        /// <summary>
-        /// Finalize SplashKit text entry (if active) and copy the value into _token.
-        /// </summary>
+       
         private void CaptureText()
         {
-            // If reading is still active, the caller should have already called EndReadingText().
-            // Only update the token if the entry wasn't cancelled.
+           
             if (!SplashKit.TextEntryCancelled())
             {
                 var entered = SplashKit.TextInput() ?? "";

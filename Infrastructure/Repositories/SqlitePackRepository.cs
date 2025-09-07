@@ -10,12 +10,7 @@ using PharmaChainLite.Infrastructure.Data;
 
 namespace PharmaChainLite.Infrastructure.Repositories
 {
-    /// <summary>
-    /// SQLite-backed Pack repository that only assumes:
-    ///  - Pack has Token (string),
-    ///  - Pack may expose Status (enum) and/or SetStatus(PackStatus) (optional).
-    /// It does NOT require medicine/batch/expiry properties or specific constructors.
-    /// </summary>
+
     public sealed class SqlitePackRepository : IPackRepository
     {
         private readonly SqliteDb _db;
@@ -50,11 +45,7 @@ namespace PharmaChainLite.Infrastructure.Repositories
             UpsertTokenOnly(GetToken(pack), GetStatus(pack));
         }
 
-        /// <summary>
-        /// Token-only upsert to support domains where Pack doesn't expose a usable constructor.
-        /// Works with either minimal schema (Token, Status) or extended schema (adds placeholders).
-        /// </summary>
-        // inside class SqlitePackRepository ...
+
 
         public void UpsertTokenOnly(string token, PackStatus status = PackStatus.Produced)
         {

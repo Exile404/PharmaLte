@@ -7,12 +7,6 @@ using PharmaChainLite.Domain;
 
 namespace PharmaChainLite.Presentation
 {
-    /// <summary>
-    /// Shipments screen:
-    /// - Left: selectable list of shipments
-    /// - Right: details + Add Pack input + status buttons
-    /// Includes optional debug HUD (off by default).
-    /// </summary>
     public sealed class ShipmentsScene : IScene
     {
         private readonly EventingShipmentService _shipSvc;
@@ -39,8 +33,8 @@ namespace PharmaChainLite.Presentation
         // cache
         private List<Shipment> _cache = new();
 
-        // ---- DEBUG HUD (turn off for clean UI) ----
-        private readonly bool _debug = false;   // << was true; now false to avoid UI clutter
+     
+        private readonly bool _debug = false;   
         private string _dbgLastBuf = "";
         private string _dbgNote = "";
         // -------------------------------------------
@@ -125,7 +119,7 @@ namespace PharmaChainLite.Presentation
             w.DrawText("PharmaChain Lite - Shipments", Color.Black, _font, 22, 20, 60);
 
             // STATUS MESSAGE (moved up a bit, subtle gray)
-            const int msgY = 72; // was 86
+            const int msgY = 72; 
             w.DrawText(_message, Color.RGBAColor(60, 60, 60, 255), _font, 16, _detailsRect.X, msgY);
 
             // Left list

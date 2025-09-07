@@ -5,9 +5,7 @@ using SplashKitSDK;
 
 namespace PharmaChainLite.Presentation
 {
-    /// <summary>
-    /// One safe place to load and hold the UI font for the whole app.
-    /// </summary>
+
     public static class AppFonts
     {
         public const string UiName = "ui";
@@ -21,14 +19,12 @@ namespace PharmaChainLite.Presentation
         {
             if (_ready) return;
 
-            // 1) Make sure SplashKit knows where Resources is
-            //    (the API allows changing the resources folder at runtime). :contentReference[oaicite:3]{index=3}
+            
             var resourcesPath = Path.Combine(AppContext.BaseDirectory, "Resources");
             if (Directory.Exists(resourcesPath))
                 SplashKit.SetResourcesPath(resourcesPath);
 
-            // 2) Try to load a resource bundle if present (Resources/bundles/default.txt).
-            //    Bundles can declare: FONT,ui,arial.ttf  :contentReference[oaicite:4]{index=4}
+           
             try
             {
                 var bundleFile = Path.Combine(SplashKit.PathToResources(), "bundles", "default.txt");
@@ -45,10 +41,10 @@ namespace PharmaChainLite.Presentation
                 return;
             }
 
-            // 3) Direct file load from Resources/fonts, case-insensitive search (handles ARIAL.TTF)
+       
             try
             {
-                var fontsDir = SplashKit.PathToResources(ResourceKind.FontResource); // .../Resources/fonts :contentReference[oaicite:5]{index=5}
+                var fontsDir = SplashKit.PathToResources(ResourceKind.FontResource);
                 if (Directory.Exists(fontsDir))
                 {
                     var candidate = Directory.EnumerateFiles(fontsDir, "*.*", SearchOption.TopDirectoryOnly)
@@ -74,24 +70,18 @@ namespace PharmaChainLite.Presentation
             _ready = true;
         }
 
-        /// <summary>
-        /// True if a font named "ui" is registered (bundle or LoadFont).
-        /// </summary>
+
         public static bool HasUiNameLoaded => SplashKit.HasFont(UiName);
 
-        /// <summary>
-        /// Measure text width for layout. Uses name-based TextWidth if "ui" is registered,
-        /// otherwise a conservative estimate so buttons never clip.
-        /// </summary>
+ 
         public static int Measure(string text, int size)
         {
             text ??= string.Empty;
 
             if (HasUiNameLoaded)
-                return SplashKit.TextWidth(UiName, text, size); // documented Text API, name overload. :contentReference[oaicite:7]{index=7}
+                return SplashKit.TextWidth(UiName, text, size); 
 
-            // Conservative estimate to avoid clipping if we’re on system font without a name:
-            // average glyph width ≈ 0.62em
+           
             return (int)Math.Ceiling(text.Length * size * 0.62);
         }
     }

@@ -1,12 +1,12 @@
 using System;
 using SplashKitSDK;
-using PharmaChainLite.Application.Sales;   // adjust if your namespace differs
+using PharmaChainLite.Application.Sales;   
 
 namespace PharmaChainLite.Presentation
 {
     public sealed class SalesScene : IScene
     {
-        private readonly SalesService _salesSvc; // rename type if yours differs
+        private readonly SalesService _salesSvc; 
         private readonly Font _font;
 
         // Layout
@@ -29,11 +29,11 @@ namespace PharmaChainLite.Presentation
         private enum Active { None, Token, Retailer, Customer, Price }
         private Active _active = Active.None;
 
-        // Debug HUD (off by default)
+  
         private readonly bool _debug = false;
         private string _dbgBuf = ""; private string _dbgNote = "";
 
-        public SalesScene(SalesService salesSvc)           // rename parameter type if needed
+        public SalesScene(SalesService salesSvc)          
         {
             _salesSvc = salesSvc ?? throw new ArgumentNullException(nameof(salesSvc));
             _font = SplashKit.LoadFont("ui", "arial.ttf");
@@ -202,10 +202,9 @@ namespace PharmaChainLite.Presentation
 
             try
             {
-                // ---- call your sales service ----
-                // Adjust the method name if yours differs (e.g., Sell, RecordSale, etc.)
+             
                 _salesSvc.RecordSale(token, _retailer?.Trim(), _customer?.Trim(), price);
-                // ---------------------------------
+            
 
                 _msg = $"Sale recorded for {token}.";
                 _token = _retailer = _customer = _priceText = "";

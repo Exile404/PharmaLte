@@ -5,7 +5,7 @@ using PharmaChainLite.Application.Shipments;
 using PharmaChainLite.Application.Verification;
 using PharmaChainLite.Domain;
 using PharmaChainLite.Domain.Repositories;
-using PharmaChainLite.Infrastructure.Repositories; // SqlitePackRepository.UpsertTokenOnly
+using PharmaChainLite.Infrastructure.Repositories; 
 
 namespace PharmaChainLite.Presentation
 {
@@ -112,9 +112,9 @@ namespace PharmaChainLite.Presentation
             DrawLabel(w, "Token", 80, 146);
             DrawLabel(w, "Medicine Name", 80, 196);
             DrawLabel(w, "Batch No", 80, 246);
-            DrawLabel(w, "Expiry (yyyy-mm-dd)", 80, 296);
+            DrawLabel(w, "Expiry date", 80, 296);
 
-            DrawLabel(w, "Shipment Id (optional)", 80, 366);
+            DrawLabel(w, "Shipment Id", 80, 366);
             DrawLabel(w, "From", 80, 416);
             DrawLabel(w, "To", 80, 466);
 

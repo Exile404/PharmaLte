@@ -6,14 +6,7 @@ using PharmaChainLite.Domain.Repositories;
 
 namespace PharmaChainLite.Application.Payments
 {
-    /// <summary>
-    /// Coordinates payment-side effects:
-    ///  - On Shipment Delivered  -> generate ToParty->FromParty entries (per delivered pack).
-    ///  - On Retail Sale         -> generate Customer->Retailer entries (per pack).
-    ///
-    /// Uses IPaymentPolicy (Strategy) so rules/amounts can change without touching callers.
-    /// Subscribes to domain events on the in-process IEventBus (Event Aggregator).
-    /// </summary>
+
     public sealed class PaymentService : IDisposable
     {
         private readonly IEventBus _bus;
@@ -47,9 +40,7 @@ namespace PharmaChainLite.Application.Payments
             _shipmentSub = _bus.Subscribe<ShipmentStatusChanged>(OnShipmentStatusChanged);
         }
 
-        /// <summary>
-        /// Explicit API for retail sales. SalesService should call this after marking a Pack as Sold.
-        /// </summary>
+   
         public void RecordRetailSale(string retailer, string customer, string packToken, decimal? salePrice = null)
         {
             if (string.IsNullOrWhiteSpace(retailer)) throw new ArgumentException("Retailer is required.", nameof(retailer));

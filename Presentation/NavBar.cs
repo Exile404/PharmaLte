@@ -3,10 +3,7 @@ using SplashKitSDK;
 
 namespace PharmaChainLite.Presentation
 {
-    /// <summary>
-    /// Simple clickable navigation bar.
-    /// Draw on top of the window; call HandleInput(...) each frame to detect clicks.
-    /// </summary>
+
     public sealed class NavBar
     {
         private readonly Font _font;
@@ -17,19 +14,17 @@ namespace PharmaChainLite.Presentation
 
         public NavBar()
         {
-            _font = SplashKit.LoadFont("ui", "arial.ttf"); // Ensure arial.ttf is present beside the executable
+            _font = SplashKit.LoadFont("ui", "arial.ttf");
         }
 
-        /// <summary>
-        /// Draws the bar and tabs.
-        /// </summary>
+
         public void Draw(Window w, SceneKey active)
         {
-            // Background strip
+          
             w.FillRectangle(Color.RGBAColor(245, 247, 250, 255), 0, 0, w.Width, Height);
             w.DrawLine(Color.RGBAColor(220, 225, 230, 255), 0, Height, w.Width, Height);
 
-            // Layout tabs based on current window width
+            
             _tabRects = ComputeTabLayout(w.Width);
 
             for (int i = 0; i < _order.Length; i++)
@@ -37,7 +32,7 @@ namespace PharmaChainLite.Presentation
                 var key = _order[i];
                 var r = _tabRects[i];
 
-                // Active/hover styles
+             
                 var isActive = key.Equals(active);
                 if (isActive)
                     w.FillRectangle(Color.RGBAColor(225, 235, 255, 255), r);
@@ -52,10 +47,7 @@ namespace PharmaChainLite.Presentation
             }
         }
 
-        /// <summary>
-        /// Returns a new SceneKey when a tab is clicked; otherwise null.
-        /// Call after SplashKit.ProcessEvents() in your loop.
-        /// </summary>
+       
         public SceneKey? HandleInput()
         {
             if (!SplashKit.MouseClicked(MouseButton.LeftButton)) return null;
@@ -86,8 +78,7 @@ namespace PharmaChainLite.Presentation
                 x += tabW + gap;
             }
 
-            // If we run out of space, tabs will just extend; for a small window you can
-            // later add wrapping or condensed labels.
+            
             return rects;
         }
 

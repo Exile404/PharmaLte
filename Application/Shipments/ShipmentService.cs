@@ -7,9 +7,7 @@ using PharmaChainLite.Infrastructure.Repositories; // for SqlitePackRepository
 
 namespace PharmaChainLite.Application.Shipments
 {
-    /// <summary>
-    /// Application service coordinating shipment workflows and side effects on Packs.
-    /// </summary>
+
     public sealed class ShipmentService
     {
         private readonly IPackRepository _packs;
@@ -61,7 +59,7 @@ namespace PharmaChainLite.Application.Shipments
             if (pack.Status == PackStatus.Sold)
                 throw new InvalidOperationException("Cannot add a sold pack to a shipment.");
 
-            // CRITICAL: add the normalized token, not pack.Token (which may be empty via reflection)
+            
             shipment.AddPackToken(token);
             _shipments.Upsert(shipment);
 
@@ -119,10 +117,6 @@ namespace PharmaChainLite.Application.Shipments
 
         public IEnumerable<Shipment> List(int skip = 0, int take = 100) => _shipments.List(skip, take);
 
-        // ---------------------------------------------------------------------
-        // internals
-        // ---------------------------------------------------------------------
-
         private Shipment RequireShipment(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Shipment id is required.", nameof(id));
@@ -130,9 +124,6 @@ namespace PharmaChainLite.Application.Shipments
                    ?? throw new InvalidOperationException($"Shipment '{id}' was not found.");
         }
 
-        /// <summary>
-        /// Strong, repo-optimized pack status update. Avoids reading pack.Token entirely.
-        /// </summary>
         private void SetPacksStatus(IEnumerable<string> tokens, PackStatus status)
         {
             if (_packs is SqlitePackRepository sqlite)
