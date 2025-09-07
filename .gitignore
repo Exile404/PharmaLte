@@ -1,0 +1,83 @@
+# ---------------------------
+# OS junk
+# ---------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# ---------------------------
+# IDEs/editors
+# ---------------------------
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# ---------------------------
+# Build outputs
+# ---------------------------
+bin/
+obj/
+[Bb]uild/
+out/
+artifacts/
+publish/
+TestResults/
+*.cache
+*.log
+*.tlog
+
+# Keep placeholder files if you use them
+!.gitkeep
+
+# ---------------------------
+# NuGet
+# ---------------------------
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+project.lock.json
+artifacts/
+
+# ---------------------------
+# Code analysis / coverage / test artifacts
+# ---------------------------
+*.coverage
+*.coveragexml
+*.opencover.xml
+*.lcov
+coverage*/
+*.trx
+*.vsp
+*.vspx
+
+# ---------------------------
+# SQLite databases (and companions)
+# ---------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+*.sdb
+# journal/WAL/SHM companions
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.db-journal
+*.db-wal
+*.db-shm
+
+# project-specific DBs (explicit)
+**/pharma*.db
+**/pharma*.sqlite
+**/pharma*.sqlite3
+
+# If you keep SQL migration scripts, allow those:
+!**/*.sql

@@ -1,35 +1,41 @@
 using System;
-using System.Globalization;
 using SplashKitSDK;
-using PharmaChainLite.Application.Sales;
+using PharmaChainLite.Application.Sales;   // adjust if your namespace differs
 
 namespace PharmaChainLite.Presentation
 {
     public sealed class SalesScene : IScene
     {
-        private readonly SalesService _sales;
-
-        // Padded below the navbar
-        private readonly Rectangle _tokenRect    = SplashKit.RectangleFrom(180, 150, 360, 32);
-        private readonly Rectangle _retailerRect = SplashKit.RectangleFrom(180, 200, 360, 32);
-        private readonly Rectangle _customerRect = SplashKit.RectangleFrom(180, 250, 360, 32);
-        private readonly Rectangle _priceRect    = SplashKit.RectangleFrom(180, 300, 160, 32);
-        private readonly Rectangle _sellBtnRect  = SplashKit.RectangleFrom(180, 350, 120, 36);
-
+        private readonly SalesService _salesSvc; // rename type if yours differs
         private readonly Font _font;
 
+        // Layout
+        private readonly Rectangle _panelRect    = SplashKit.RectangleFrom(20, 120, 940, 420);
+
+        private readonly Rectangle _tokenRect    = SplashKit.RectangleFrom(40, 200, 360, 32);
+        private readonly Rectangle _retailerRect = SplashKit.RectangleFrom(40, 252, 360, 32);
+        private readonly Rectangle _customerRect = SplashKit.RectangleFrom(40, 304, 360, 32);
+        private readonly Rectangle _priceRect    = SplashKit.RectangleFrom(40, 356, 160, 32);
+
+        private readonly Rectangle _recordBtn    = SplashKit.RectangleFrom(420, 200, 140, 36);
+        private readonly Rectangle _clearBtn     = SplashKit.RectangleFrom(420, 252, 140, 36);
+
+        private string _msg = "Enter sale details and Record.";
         private string _token = "";
         private string _retailer = "";
         private string _customer = "";
         private string _priceText = "";
-        private string _message = "Enter token, retailer, customer, optional price -> Sell";
 
-        private enum ActiveField { None, Token, Retailer, Customer, Price }
-        private ActiveField _active = ActiveField.None;
+        private enum Active { None, Token, Retailer, Customer, Price }
+        private Active _active = Active.None;
 
-        public SalesScene(SalesService sales)
+        // Debug HUD (off by default)
+        private readonly bool _debug = false;
+        private string _dbgBuf = ""; private string _dbgNote = "";
+
+        public SalesScene(SalesService salesSvc)           // rename parameter type if needed
         {
-            _sales = sales ?? throw new ArgumentNullException(nameof(sales));
+            _salesSvc = salesSvc ?? throw new ArgumentNullException(nameof(salesSvc));
             _font = SplashKit.LoadFont("ui", "arial.ttf");
         }
 
@@ -41,56 +47,40 @@ namespace PharmaChainLite.Presentation
             {
                 var p = SplashKit.MousePosition();
 
-                // Clicking into a field: commit current edit first, then start new edit
-                if (PointInRect(p, _tokenRect))
-                {
-                    CommitActiveEdit();
-                    BeginEdit(ActiveField.Token);
-                }
-                else if (PointInRect(p, _retailerRect))
-                {
-                    CommitActiveEdit();
-                    BeginEdit(ActiveField.Retailer);
-                }
-                else if (PointInRect(p, _customerRect))
-                {
-                    CommitActiveEdit();
-                    BeginEdit(ActiveField.Customer);
-                }
-                else if (PointInRect(p, _priceRect))
-                {
-                    CommitActiveEdit();
-                    BeginEdit(ActiveField.Price);
-                }
-
-                // Sell button: commit then sell
-                if (PointInRect(p, _sellBtnRect))
-                {
-                    CommitActiveEdit();
-                    DoSell();
-                }
+                if (PointIn(p, _tokenRect))    { Commit("click->token");    Begin(Active.Token); }
+                else if (PointIn(p, _retailerRect)) { Commit("click->ret"); Begin(Active.Retailer); }
+                else if (PointIn(p, _customerRect)) { Commit("click->cust"); Begin(Active.Customer); }
+                else if (PointIn(p, _priceRect))    { Commit("click->price");Begin(Active.Price);   }
+                else if (PointIn(p, _recordBtn))    { Commit("click->record"); DoRecord(); }
+                else if (PointIn(p, _clearBtn))     { Commit("click->clear");  ClearAll(); }
+                else { Commit("click->bg"); }
             }
 
-            // Press Enter = commit & Sell
             if (SplashKit.KeyTyped(KeyCode.ReturnKey))
             {
-                CommitActiveEdit();
-                DoSell();
+                Commit("Enter");
+                DoRecord();
             }
 
-            // Tab between fields while preserving text
-            if (SplashKit.KeyTyped(KeyCode.TabKey))
-            {
-                CommitActiveEdit();
-                _active = NextField(_active);
-                BeginEdit(_active);
-            }
-
-            // Esc = finish editing without changing stored value
             if (SplashKit.KeyTyped(KeyCode.EscapeKey))
             {
-                if (SplashKit.ReadingText()) SplashKit.EndReadingText(); // don't overwrite the stored value
-                _active = ActiveField.None;
+                if (SplashKit.ReadingText()) SplashKit.EndReadingText();
+                _active = Active.None;
+            }
+
+            if (SplashKit.KeyTyped(KeyCode.TabKey))
+            {
+                Commit("Tab");
+                _active = _active switch
+                {
+                    Active.None      => Active.Token,
+                    Active.Token     => Active.Retailer,
+                    Active.Retailer  => Active.Customer,
+                    Active.Customer  => Active.Price,
+                    Active.Price     => Active.Token,
+                    _                => Active.Token
+                };
+                Begin(_active);
             }
         }
 
@@ -99,133 +89,140 @@ namespace PharmaChainLite.Presentation
         public void Draw(Window w)
         {
             w.Clear(Color.White);
+
+            // Title
             w.DrawText("PharmaChain Lite - Sales", Color.Black, _font, 22, 20, 60);
-            w.DrawText(_message, Color.Black, _font, 16, 20, 86);
 
-            DrawLabel(w, "Pack Token",  60, 156);
-            DrawLabel(w, "Retailer",    60, 206);
-            DrawLabel(w, "Customer",    60, 256);
-            DrawLabel(w, "Price (opt.)",60, 306);
+            // Message (subtle gray)
+            w.DrawText(_msg, Color.RGBAColor(60,60,60,255), _font, 16, 20, 90);
 
-            DrawBox(w, _tokenRect,    _token,    _active == ActiveField.Token);
-            DrawBox(w, _retailerRect, _retailer, _active == ActiveField.Retailer);
-            DrawBox(w, _customerRect, _customer, _active == ActiveField.Customer);
-            DrawBox(w, _priceRect,    _priceText,_active == ActiveField.Price);
+            // Panel
+            w.DrawRectangle(Color.Black, _panelRect);
 
-            w.FillRectangle(Color.RGBAColor(30,144,255,255), _sellBtnRect);
-            w.DrawRectangle(Color.Black, _sellBtnRect);
-            w.DrawText("Sell", Color.White, _font, 18, _sellBtnRect.X + 42, _sellBtnRect.Y + 7);
+            // Labels + inputs (ASCII only, no fancy glyphs)
+            w.DrawText("Pack Token:", Color.Black, _font, 16, _tokenRect.X, _tokenRect.Y - 22);
+            DrawBox(w, _tokenRect, _token, _active == Active.Token);
+
+            w.DrawText("Retailer:", Color.Black, _font, 16, _retailerRect.X, _retailerRect.Y - 22);
+            DrawBox(w, _retailerRect, _retailer, _active == Active.Retailer);
+
+            w.DrawText("Customer:", Color.Black, _font, 16, _customerRect.X, _customerRect.Y - 22);
+            DrawBox(w, _customerRect, _customer, _active == Active.Customer);
+
+            w.DrawText("Price (opt.):", Color.Black, _font, 16, _priceRect.X, _priceRect.Y - 22);
+            DrawBox(w, _priceRect, _priceText, _active == Active.Price);
+
+            // Buttons
+            w.FillRectangle(Color.RGBAColor(30,144,255,255), _recordBtn);
+            w.DrawRectangle(Color.Black, _recordBtn);
+            w.DrawText("Record", Color.White, _font, 16, _recordBtn.X + 36, _recordBtn.Y + 8);
+
+            w.FillRectangle(Color.RGBAColor(200,200,200,255), _clearBtn);
+            w.DrawRectangle(Color.Black, _clearBtn);
+            w.DrawText("Clear", Color.Black, _font, 16, _clearBtn.X + 42, _clearBtn.Y + 8);
+
+            if (_debug)
+            {
+                var hud = $"DBG active={_active} reading={SplashKit.ReadingText()} | buf='{_dbgBuf}' note={_dbgNote}";
+                w.DrawText(hud, Color.RGBAColor(90,90,90,255), _font, 12, 20, 560);
+            }
         }
 
-        // ----- Helpers -----
+        // ---- helpers --------------------------------------------------------
 
-        private void BeginEdit(ActiveField field)
+        private void DrawBox(Window w, Rectangle r, string text, bool focused)
+        {
+            w.DrawRectangle(Color.Black, r);
+            if (focused && SplashKit.ReadingText())
+            {
+                SplashKit.DrawCollectedText(Color.Black, _font, 18, SplashKit.OptionDefaults());
+                w.DrawRectangle(Color.RGBAColor(30,144,255,255), r);
+            }
+            else
+            {
+                w.DrawText(text ?? "", Color.Black, _font, 18, r.X + 6, r.Y + 6);
+            }
+        }
+
+        private void Begin(Active field)
         {
             _active = field;
-            Rectangle r = field switch
-            {
-                ActiveField.Token    => _tokenRect,
-                ActiveField.Retailer => _retailerRect,
-                ActiveField.Customer => _customerRect,
-                ActiveField.Price    => _priceRect,
-                _ => _tokenRect
+            var r = field switch {
+                Active.Token    => _tokenRect,
+                Active.Retailer => _retailerRect,
+                Active.Customer => _customerRect,
+                Active.Price    => _priceRect,
+                _               => _tokenRect
             };
-            SplashKit.StartReadingText(r); // start collecting text for the focused box
+            SplashKit.StartReadingText(r);
         }
 
-        /// <summary>
-        /// Finish SplashKit text entry (if active) and copy the collected value
-        /// into the correct backing field. This follows the official pattern:
-        /// EndReadingText() -> TextInput() -> store value. :contentReference[oaicite:1]{index=1}
-        /// </summary>
-        private void CommitActiveEdit()
+        /// Commit current SplashKit text buffer to the active field.
+        private void Commit(string reason)
         {
-            if (!SplashKit.ReadingText()) return;
+            bool wasReading = SplashKit.ReadingText();
+            if (wasReading) SplashKit.EndReadingText();
 
-            // Finish the current edit session
-            SplashKit.EndReadingText();
+            string buf = SplashKit.TextInput() ?? "";
+            string t = buf.Trim();
 
-            // If the user didn't cancel, read the text they typed
-            if (!SplashKit.TextEntryCancelled())
+            if (_active == Active.Token)
             {
-                string text = (SplashKit.TextInput() ?? "").Trim();
-
-                switch (_active)
-                {
-                    case ActiveField.Token:
-                        if (text.Length > 0) _token = text.ToUpperInvariant();
-                        break;
-                    case ActiveField.Retailer:
-                        if (text.Length > 0) _retailer = text;
-                        break;
-                    case ActiveField.Customer:
-                        if (text.Length > 0) _customer = text;
-                        break;
-                    case ActiveField.Price:
-                        _priceText = text; // allow empty to clear
-                        break;
-                }
+                if (t.Length > 0) _token = t.ToUpperInvariant();
+            }
+            else if (_active == Active.Retailer)
+            {
+                if (t.Length > 0) _retailer = t;
+            }
+            else if (_active == Active.Customer)
+            {
+                if (t.Length > 0) _customer = t;
+            }
+            else if (_active == Active.Price)
+            {
+                if (t.Length > 0) _priceText = t;
             }
 
-            _active = ActiveField.None;
+            if (_debug) { _dbgBuf = buf; _dbgNote = $"{reason} | wasReading={wasReading}"; }
+            _active = Active.None;
         }
 
-        private static ActiveField NextField(ActiveField f) => f switch
+        private void DoRecord()
         {
-            ActiveField.None     => ActiveField.Token,
-            ActiveField.Token    => ActiveField.Retailer,
-            ActiveField.Retailer => ActiveField.Customer,
-            ActiveField.Customer => ActiveField.Price,
-            ActiveField.Price    => ActiveField.Token,
-            _ => ActiveField.Token
-        };
+            var token = (_token ?? "").Trim().ToUpperInvariant();
+            if (token.Length == 0) { _msg = "Pack token is required."; return; }
 
-        private void DoSell()
-        {
-            // Always validate against the stored strings (committed from the last edit)
-            var token    = (_token ?? "").Trim();
-            var retailer = (_retailer ?? "").Trim();
-            var customer = (_customer ?? "").Trim();
-
-            if (token.Length == 0)    { _message = "Enter a pack token."; return; }
-            if (retailer.Length == 0) { _message = "Enter retailer name."; return; }
-            if (customer.Length == 0) { _message = "Enter customer name."; return; }
-
+            // price?
             decimal? price = null;
             if (!string.IsNullOrWhiteSpace(_priceText))
             {
-                if (decimal.TryParse(_priceText, NumberStyles.Number, CultureInfo.InvariantCulture, out var p) && p > 0)
-                    price = p;
-                else { _message = "Price must be a positive number."; return; }
+                if (decimal.TryParse(_priceText, out var p)) price = p;
+                else { _msg = "Invalid price format."; return; }
             }
 
             try
             {
-                _sales.SellPack(token, retailer, customer, price);
-                _message = $"Sold {token} to {customer} @ {retailer}" + (price.HasValue ? $" for {price.Value:C}" : "");
-                _priceText = "";
+                // ---- call your sales service ----
+                // Adjust the method name if yours differs (e.g., Sell, RecordSale, etc.)
+                _salesSvc.RecordSale(token, _retailer?.Trim(), _customer?.Trim(), price);
+                // ---------------------------------
+
+                _msg = $"Sale recorded for {token}.";
+                _token = _retailer = _customer = _priceText = "";
             }
-            catch (Exception ex) { _message = ex.Message; }
+            catch (Exception ex)
+            {
+                _msg = ex.Message;
+            }
         }
 
-        private void DrawLabel(Window w, string text, double x, double y)
-            => w.DrawText(text, Color.Black, _font, 16, x, y);
-
-        private void DrawBox(Window w, Rectangle rect, string text, bool focused)
+        private void ClearAll()
         {
-            w.DrawRectangle(Color.Black, rect);
-            if (focused && SplashKit.ReadingText())
-            {
-                SplashKit.DrawCollectedText(Color.Black, _font, 18, SplashKit.OptionDefaults());
-                w.DrawRectangle(Color.RGBAColor(30,144,255,255), rect);
-            }
-            else
-            {
-                w.DrawText(text ?? "", Color.Black, _font, 18, rect.X + 6, rect.Y + 6);
-            }
+            _token = _retailer = _customer = _priceText = "";
+            _msg = "Cleared.";
         }
 
-        private static bool PointInRect(Point2D p, Rectangle r)
+        private static bool PointIn(Point2D p, Rectangle r)
             => p.X >= r.X && p.X <= r.X + r.Width && p.Y >= r.Y && p.Y <= r.Y + r.Height;
     }
 }

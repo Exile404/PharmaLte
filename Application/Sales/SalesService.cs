@@ -3,6 +3,7 @@ using PharmaChainLite.Application.Events;
 using PharmaChainLite.Application.Payments;
 using PharmaChainLite.Domain;
 using PharmaChainLite.Domain.Repositories;
+using PharmaChainLite.Infrastructure.Repositories; // for SqlitePackRepository
 
 namespace PharmaChainLite.Application.Sales
 {
@@ -26,17 +27,17 @@ namespace PharmaChainLite.Application.Sales
         }
 
         /// <summary>
-        /// Marks the pack as Sold (only allowed from Delivered), publishes events,
-        /// and records the retail payment (Customer -> Retailer).
+        /// UI-friendly entry point. Normalizes inputs and performs the sale.
         /// </summary>
-        public void SellPack(string packToken, string retailer, string customer, decimal? salePrice = null)
+        public void RecordSale(string packToken, string retailer, string customer, decimal? salePrice = null)
         {
-            if (string.IsNullOrWhiteSpace(packToken)) throw new ArgumentException("Pack token is required.", nameof(packToken));
+            var token = Normalize(packToken);
+            if (token.Length == 0) throw new ArgumentException("Pack token is required.", nameof(packToken));
             if (string.IsNullOrWhiteSpace(retailer)) throw new ArgumentException("Retailer is required.", nameof(retailer));
             if (string.IsNullOrWhiteSpace(customer)) throw new ArgumentException("Customer is required.", nameof(customer));
 
-            var pack = _packs.FindByToken(packToken.Trim())
-                       ?? throw new InvalidOperationException($"Pack '{packToken}' not found.");
+            var pack = _packs.FindByToken(token)
+                       ?? throw new InvalidOperationException($"Pack '{token}' not found.");
 
             if (pack.Status == PackStatus.Sold)
                 throw new InvalidOperationException("Pack is already sold.");
@@ -45,15 +46,32 @@ namespace PharmaChainLite.Application.Sales
                 throw new InvalidOperationException("Only delivered packs can be sold.");
 
             var before = pack.Status;
-            pack.SetStatus(PackStatus.Sold);
-            _packs.Upsert(pack);
 
-            // Publish domain events
-            _bus.Publish(new PackStatusChanged(pack.Token, before, PackStatus.Sold, DateTime.UtcNow));
-            _bus.Publish(new PackSold(pack.Token, DateTime.UtcNow));
+            // Persist status → Sold without relying on pack.Token
+            if (_packs is SqlitePackRepository sqlite)
+            {
+                sqlite.UpsertTokenOnly(token, PackStatus.Sold);
+            }
+            else
+            {
+                pack.SetStatus(PackStatus.Sold);
+                _packs.Upsert(pack);
+            }
 
-            // Record ledger entry via payment strategy/service
-            _payments.RecordRetailSale(retailer.Trim(), customer.Trim(), pack.Token, salePrice);
+            // Publish domain events using the normalized token
+            _bus.Publish(new PackStatusChanged(token, before, PackStatus.Sold, DateTime.UtcNow));
+            _bus.Publish(new PackSold(token, DateTime.UtcNow));
+
+            // Record ledger entry via payment service
+            _payments.RecordRetailSale(retailer.Trim(), customer.Trim(), token, salePrice);
         }
+
+        /// <summary>
+        /// Backward-compat shim for existing callers. Forwards to RecordSale.
+        /// </summary>
+        public void SellPack(string packToken, string retailer, string customer, decimal? salePrice = null)
+            => RecordSale(packToken, retailer, customer, salePrice);
+
+        private static string Normalize(string s) => (s ?? string.Empty).Trim().ToUpperInvariant();
     }
 }

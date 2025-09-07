@@ -10,6 +10,7 @@ namespace PharmaChainLite.Application.Shipments
     /// Decorator around ShipmentService that emits domain events:
     ///  - ShipmentStatusChanged when a shipment transitions.
     ///  - PackStatusChanged for any packs whose status changes as a result.
+    /// Also normalizes pack tokens before delegating.
     /// </summary>
     public sealed class EventingShipmentService
     {
@@ -28,10 +29,17 @@ namespace PharmaChainLite.Application.Shipments
             => _inner.CreateShipment(id, fromParty, toParty);
 
         public Shipment AddPack(string shipmentId, string packToken)
-            => _inner.AddPack(shipmentId, packToken);
+        {
+            // Normalize once here too (belt & braces with the inner service)
+            var token = (packToken ?? string.Empty).Trim().ToUpperInvariant();
+            return _inner.AddPack(shipmentId, token);
+        }
 
         public Shipment RemovePack(string shipmentId, string packToken)
-            => _inner.RemovePack(shipmentId, packToken);
+        {
+            var token = (packToken ?? string.Empty).Trim().ToUpperInvariant();
+            return _inner.RemovePack(shipmentId, token);
+        }
 
         public IEnumerable<Shipment> List(int skip = 0, int take = 100)
             => _inner.List(skip, take);
@@ -49,13 +57,13 @@ namespace PharmaChainLite.Application.Shipments
             var shipmentBefore = Find(shipmentId);
             foreach (var t in shipmentBefore.PackTokens)
             {
-                var p = _packs.FindByToken(t);
+                var p = _packs.FindByToken((t ?? string.Empty).Trim().ToUpperInvariant());
                 if (p != null) beforeStatuses[t] = p.Status;
             }
 
             var from = shipmentBefore.Status;
 
-            // Perform transition (will update pack statuses internally)
+            // Perform transition (inner updates packs)
             var shipmentAfter = _inner.Transition(shipmentId, nextStatus);
 
             // Publish shipment-level event
@@ -69,16 +77,16 @@ namespace PharmaChainLite.Application.Shipments
             // Publish pack-level status changes
             foreach (var t in shipmentAfter.PackTokens)
             {
-                var after = _packs.FindByToken(t);
+                var norm = (t ?? string.Empty).Trim().ToUpperInvariant();
+                if (norm.Length == 0) continue;
+
+                var after = _packs.FindByToken(norm);
                 if (after == null) continue;
 
-                var hadBefore = beforeStatuses.TryGetValue(t, out var prev);
-                if (!hadBefore) continue; // only announce for known packs in this shipment
-
-                if (prev != after.Status)
+                if (beforeStatuses.TryGetValue(t, out var prev) && prev != after.Status)
                 {
                     _bus.Publish(new PackStatusChanged(
-                        Token: after.Token,
+                        Token: after.Token, // if your Pack exposes Token; otherwise use 'norm'
                         From: prev,
                         To: after.Status,
                         OccurredAt: DateTime.UtcNow

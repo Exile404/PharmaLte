@@ -62,7 +62,7 @@ namespace PharmaChainLite.Presentation
             w.DrawText(_message, Color.Black, _font, 16, 20, MsgY);
 
             w.DrawRectangle(Color.Black, _listRect);
-            w.DrawText("Date (UTC)                         From -> To                        Amount        Memo",
+            w.DrawText("Date (UTC)                         Payer -> Payee      Amount     Memo",
                        Color.Black, _font, 16, _listRect.X + 10, _listRect.Y - 22);
 
             double y = _listRect.Y + 10;

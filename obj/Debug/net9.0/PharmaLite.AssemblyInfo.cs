@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PharmaLite")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+312f13c1217e4f6639dc75e8fdd32e78b23f7451")]
 [assembly: System.Reflection.AssemblyProductAttribute("PharmaLite")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PharmaLite")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -8,6 +8,7 @@ using PharmaChainLite.Application.Verification;
 
 using PharmaChainLite.Domain.Repositories;
 
+using PharmaChainLite.Infrastructure.Data;
 using PharmaChainLite.Infrastructure.Repositories;
 
 using PharmaChainLite.Presentation;
@@ -18,48 +19,41 @@ namespace PharmaLite
     {
         public static void Main()
         {
-            // Window
             var window = new Window("PharmaChain Lite", 1000, 600);
 
-            // 1) Infrastructure
-            IPackRepository packRepo           = new InMemoryPackRepository();
-            IShipmentRepository shipmentRepo   = new InMemoryShipmentRepository();
-            ILedgerRepository ledgerRepo       = new InMemoryLedgerRepository();
+            // --- Persistence: SQLite ---
+            var db = new SqliteDb("pharmachain.db");
+            db.EnsureCreated();
 
-            // 2) Cross-cutting
+            IPackRepository packRepo         = new SqlitePackRepository(db);
+            IShipmentRepository shipRepo     = new SqliteShipmentRepository(db);
+            ILedgerRepository ledgerRepo     = new SqliteLedgerRepository(db);
+
+            // --- Cross-cutting ---
             var bus    = new InProcessEventBus();
             var policy = new PerUnitPaymentPolicy();
-            var paySvc = new PaymentService(
-                bus,
-                policy,
-                ledgerRepo,
-                shipmentRepo,
-                packRepo,
-                deliveryUnitPrice: 8.50m,
-                defaultRetailPrice: 12.00m
-            );
+            var paySvc = new PaymentService(bus, policy, ledgerRepo, shipRepo, packRepo, 8.50m, 12.00m);
 
-            // 3) Domain services
-            var verifySvc    = new VerificationService(packRepo);
-            var shipCore     = new ShipmentService(packRepo, shipmentRepo);
-            var shipSvc      = new EventingShipmentService(shipCore, bus, packRepo);
-            var salesSvc     = new SalesService(packRepo, bus, paySvc);
+            // --- Domain services ---
+            var verifySvc = new VerificationService(packRepo);
+            var shipCore  = new ShipmentService(packRepo, shipRepo);
+            var shipSvc   = new EventingShipmentService(shipCore, bus, packRepo);
+            var salesSvc  = new SalesService(packRepo, bus, paySvc);
 
-            // 4) Scenes
+            // --- Scenes ---
             var scanScene      = new ScanScene(verifySvc);
             var shipmentsScene = new ShipmentsScene(shipSvc);
             var salesScene     = new SalesScene(salesSvc);
             var ledgerScene    = new LedgerScene(ledgerRepo);
+            var adminScene     = new AdminScene(packRepo, shipRepo, shipSvc);
 
             var router = new SceneRouter(scanScene);
             var nav    = new NavBar();
 
-            // 5) Main loop
             while (!window.CloseRequested)
             {
                 router.Current.HandleInput();
 
-                // Nav clicks after ProcessEvents()
                 var next = nav.HandleInput();
                 if (next.HasValue)
                 {
@@ -69,13 +63,13 @@ namespace PharmaLite
                         case SceneKey.Shipments: router.GoTo(shipmentsScene); break;
                         case SceneKey.Sales:     router.GoTo(salesScene); break;
                         case SceneKey.Ledger:    router.GoTo(ledgerScene); break;
+                        case SceneKey.Admin:     router.GoTo(adminScene); break;
                     }
                 }
 
                 router.Current.Update();
                 router.Current.Draw(window);
 
-                // Draw nav bar on top
                 nav.Draw(window, ActiveKey(router.Current));
                 window.Refresh(60);
             }
@@ -89,6 +83,7 @@ namespace PharmaLite
             if (scene is ShipmentsScene) return SceneKey.Shipments;
             if (scene is SalesScene)     return SceneKey.Sales;
             if (scene is LedgerScene)    return SceneKey.Ledger;
+            if (scene is AdminScene)     return SceneKey.Admin;
             return SceneKey.Scan;
         }
     }
